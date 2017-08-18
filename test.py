@@ -30,7 +30,8 @@ def get_dataset(pos_file, neg_file, unsup_file):
         for c in punctuation:
             corpus = [z.replace(c, ' %s ' % c) for z in corpus]
         corpus = [z.split() for z in corpus]
-        return corpus
+
+        return np.array(corpus)
 
     x_train = cleanText(x_train)
     x_test = cleanText(x_test)
@@ -50,31 +51,48 @@ def get_dataset(pos_file, neg_file, unsup_file):
     return x_train, x_test, unsup_reviews, y_train, y_test
 
 def getVecs(model, corpus, size):
-    vecs = [np.array(model.docvecs[z.tags[0]]).reshape(1, size) for z in corpus ]
+    vecs = [np.array(model.docvecs[z.tags[0]]).reshape(1, size) for z in corpus]
     return np.concatenate(vecs)
 
 def train(x_train, x_test, unsup_reviews, size=400, epoch_num=10):
     model_dm = gensim.models.Doc2Vec(min_count=1, window=10, size=size, sample=1e-3, negative=5, workers=3)
-    model_dbow = gensim.models.Doc2Vec(min_count=1, window=10, size=size, sample=1e-3, negative=5, dm=0, workers=3)
+    # model_dbow = gensim.models.Doc2Vec(min_count=1, window=10, size=size, sample=1e-3, negative=5, dm=0, workers=3)
 
     #使用所有的数据建立字典
-    model_dm.build_vocab(np.concatenate((x_train, x_test, unsup_reviews)))
-    model_dbow.build_vocab(np.concatenate((x_train, x_test, unsup_reviews)))
 
-    all_train_reviews = np.concatenate((x_train, unsup_reviews))
+    all_docs = []
+    all_docs.extend(x_train)
+    all_docs.extend(x_test)
+    all_docs.extend((unsup_reviews))
+
+    # all_docs = np.concatenate((x_train, x_test, unsup_reviews))
+
+
+    model_dm.build_vocab(all_docs)
+    # model_dbow.build_vocab(np.concatenate((x_train, x_test, unsup_reviews)))
+
+    all_train_reviews = []
+    all_train_reviews.extend(x_train)
+    all_train_reviews.extend(unsup_reviews)
+    # all_train_reviews = np.concatenate((x_train, unsup_reviews))
+
     for epoch in range(epoch_num):
-        perm = np.random.permutation(all_train_reviews.shape[0])
-        model_dm.train(all_train_reviews[perm])
-        model_dbow.train(all_train_reviews[perm])
+        print('train ', epoch)
+        perm = np.random.permutation(len(all_train_reviews))
+        perm_train_reviews = [all_train_reviews[idx] for idx, line in enumerate(perm)]
+        model_dm.train(perm_train_reviews, total_examples=model_dm.corpus_count, epochs=model_dm.iter)
+        # model_dbow.train(all_train_reviews[perm])
 
     #训练测试数据
-    x_test = np.array(x_test)
+    # x_test = np.array(x_test)
     for epoch in range(epoch_num):
-        perm = np.random.permutation(x_test.shape[0])
-        model_dm.train(x_test[perm])
-        model_dbow.train(x_test[perm])
+        print('train ', epoch)
+        perm = np.random.permutation(len(x_test))
+        perm_test_reviews = [x_test[idx] for idx, line in enumerate(perm)]
+        model_dm.train(x_test[perm], total_examples=model_dm.corpus_count, epochs=model_dm.iter)
+        # model_dbow.train(x_test[perm])
 
-    return model_dm, model_dbow
+    return model_dm
 
 def get_vectors(model_dm, model_dbow, x_train, x_test, size):
     #获取训练数据集的文档向量
@@ -115,11 +133,12 @@ def ROC_curve(lr, y_test, test_vecs):
 
 
 if __name__ == '__main__':
-    size, epoch_num = 400, 10
-    x_train, x_test, unsup_reviews, y_train, y_test = get_dataset()
-    model_dm, model_dbow = train(x_train, x_test, unsup_reviews, size, epoch_num)
-    train_vecs, test_vecs = get_vectors(model_dm, model_dbow)
-    lr = Classifier(train_vecs, y_train, test_vecs, y_test)
-    ROC_curve(lr, y_test)
+    size, epoch_num = 400, 1
+    x_train, x_test, unsup_reviews, y_train, y_test = get_dataset('temp/pos.txt', 'temp/neg.txt', 'temp/unsup.txt')
+    model_dm = train(x_train, x_test, unsup_reviews, size, epoch_num)
+    model_dm.save('output/dm.model')
+    # train_vecs, test_vecs = get_vectors(model_dm, model_dbow)
+    # lr = Classifier(train_vecs, y_train, test_vecs, y_test)
+    # ROC_curve(lr, y_test)
 
 
