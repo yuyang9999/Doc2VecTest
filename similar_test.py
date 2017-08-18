@@ -6,12 +6,7 @@ import smart_open
 import random
 import gensim.utils
 import gensim.models.doc2vec
-
 import jieba
-
-def seg_text(txt):
-    pass
-
 
 
 def read_corpus(fname):
