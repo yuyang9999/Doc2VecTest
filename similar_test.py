@@ -33,7 +33,7 @@ train_corpus_2 = list(read_corpus('input/sougou.csv', start_idx=len(train_corpus
 total_corpus = []
 total_corpus.extend(train_corpus_1)
 total_corpus.extend(train_corpus_2)
-model = gensim.models.doc2vec.Doc2Vec(size=600, min_count=1, iter=55)
+model = gensim.models.doc2vec.Doc2Vec(size=500, min_count=4, iter=55)
 model.build_vocab(total_corpus)
 
 model.train(total_corpus, total_examples=model.corpus_count, epochs=model.iter)
@@ -61,11 +61,11 @@ for words, doc_id in train_corpus_1:
         # print('check')
     sims = model.docvecs.most_similar([inferred_vector], topn=len(model.docvecs))
     # print('most similar index', sims[0][0])
-    print('pairs')
-    print(words)
+    # print('pairs')
+    # print(words)
 
-    print('most similar docs', doc_dic[sims[0][0]])
-    print('second similar docs', doc_dic[sims[1][0]])
+    # print('most similar docs', doc_dic[sims[0][0]])
+    # print('second similar docs', doc_dic[sims[1][0]])
 
     if doc_id == sims[0][0]:
         correct += 1
