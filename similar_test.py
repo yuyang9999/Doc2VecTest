@@ -30,8 +30,6 @@ def read_corpus(fname, start_idx = -1):
 train_corpus_1 = list(read_corpus('input/questions.csv'))
 train_corpus_2 = list(read_corpus('input/sougou.csv', start_idx=len(train_corpus_1)))
 
-# train_corpus.extend(list(read_corpus('input/sougou.csv')))
-
 total_corpus = []
 total_corpus.extend(train_corpus_1)
 total_corpus.extend(train_corpus_2)
